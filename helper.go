@@ -15,8 +15,8 @@ type Baranka struct {
 	blocks            []string
 }
 
-// NewBaranka creates a new Baranka helper with default settings.
-func NewBaranka() *Baranka {
+// New creates a new Baranka helper with default settings.
+func New() *Baranka {
 	return &Baranka{
 		count:    1,
 		template: "(%s)",

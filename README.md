@@ -12,7 +12,7 @@ A simple and flexible helper for preparing SQL queries with positional parameter
 ## Installation
 
 ```sh
-go get github.com/yourusername/baranka
+go get github.com/kaatinga/baranka
 ```
 
 ## Usage
@@ -20,9 +20,9 @@ go get github.com/yourusername/baranka
 ### Basic Example
 
 ```go
-import "github.com/yourusername/baranka"
+import "github.com/kaatinga/baranka"
 
-b := baranka.NewBaranka()
+b := baranka.New()
 b.Add(1, "foo")
 b.Add(2, "bar")
 
@@ -52,7 +52,7 @@ args := b.Args()
 
 ## API
 
-### `NewBaranka() *Baranka`
+### `New() *Baranka`
 
 Creates a new Baranka helper with default settings.
 
@@ -106,4 +106,3 @@ go test ./...
 ## License
 
 This project is licensed under the MIT License. See the [LICENSE](LICENSE.md) file for details.
-```

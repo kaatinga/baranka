@@ -56,7 +56,7 @@ func TestBaranka_Add_QuestionMarkPlaceholders(t *testing.T) {
 }
 
 func TestBaranka_Empty(t *testing.T) {
-	b := NewBaranka()
+	b := New()
 	if len(b.Args()) != 0 {
 		t.Errorf("expected no args, got %d", len(b.Args()))
 	}

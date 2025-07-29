@@ -9,7 +9,7 @@ type option func(*Baranka)
 
 // getOptions applies a list of options to a new Baranka instance.
 func getOptions(opts []option) *Baranka {
-	cfg := NewBaranka()
+	cfg := New()
 	for _, opt := range opts {
 		opt(cfg)
 	}
