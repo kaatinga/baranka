@@ -53,14 +53,23 @@ args := b.Args()
 
 ### Using Expressions
 
-You can embed SQL expressions with their own placeholders and arguments:
+You can embed SQL expressions with their own placeholders and arguments using the `Expression` type.
+
+#### How to use `Expression`
+
+- The `Expression` type allows you to inject SQL fragments with their own arguments.
+- The `template` field must be a valid `fmt.Sprintf`-style template string, using `%s` for each argument you want to substitute with a placeholder.
+- The number of `%s` in the template **must match** the number of elements in the `args` slice.
+- Placeholders (`$1`, `$2`, `?`, etc.) will be substituted for each `%s` in the template, and the corresponding values will be appended to the argument list.
+
+#### Example
 
 ```go
 b := baranka.New(baranka.WithPlaceholderFormat(baranka.PlaceholderFormatDollar))
 
 b.Add(
     baranka.Expression{
-        template: "POINT(%s %s)",
+        template: "POINT(%s %s)", // two %s for two arguments
         args:     []any{10.1, 20.2},
     },
 )
@@ -72,10 +81,13 @@ b.Add(
 )
 
 query := "INSERT INTO points (geom) VALUES " + b.Values()
-// VALUES (POINT($1 $2)), (POINT($3 $4))
+// Resulting VALUES: (POINT($1 $2)), (POINT($3 $4))
 args := b.Args()
 // [10.1, 20.2, 11.1, 21.2]
 ```
+
+**Note:**  
+If you provide a template with more or fewer `%s` than arguments, the resulting SQL will be invalid.
 
 ## API
 
@@ -105,7 +117,7 @@ Returns the SQL value blocks as a string, e.g. `($1,$2),\n($3,$4)` or `(?,?)`.
   - `PlaceholderFormatDollar` (default, for PostgreSQL: `$1`, `$2`, ...)  
   - `PlaceholderFormatQuestionMark` (for MySQL/SQLite: `?`)
 
-- `WithLength(length int)`  
+- `WithBlocksLength(length int)`  
   Pre-allocates the argument slice for performance.
 
 ## Example: Bulk Insert
