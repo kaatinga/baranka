@@ -14,11 +14,10 @@ func (b *Baranka) applyOptions(opts []option) {
 	}
 }
 
-// WithLength pre-allocates the argument slice with the given length.
-func WithLength(length int) option {
+// WithBlocksLength sets the expected number of blocks for the Baranka instance.
+func WithBlocksLength(length int) option {
 	return func(b *Baranka) {
-		b.totalLength = length
-		b.args = make([]any, 0, length)
+		b.expectedBlocks = length
 	}
 }
 
