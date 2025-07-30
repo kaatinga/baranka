@@ -6,10 +6,10 @@ import (
 )
 
 func TestBaranka_Add_DollarPlaceholders(t *testing.T) {
-	b := getOptions([]option{
+	b := New(
 		WithIncludeTemplate("(%s)"),
 		WithPlaceholderFormat(PlaceholderFormatDollar),
-	})
+	)
 
 	b.Add(1, "foo")
 	b.Add(2, "bar")
@@ -31,10 +31,10 @@ func TestBaranka_Add_DollarPlaceholders(t *testing.T) {
 }
 
 func TestBaranka_Add_QuestionMarkPlaceholders(t *testing.T) {
-	b := getOptions([]option{
+	b := New(
 		WithIncludeTemplate("(%s)"),
 		WithPlaceholderFormat(PlaceholderFormatQuestionMark),
-	})
+	)
 
 	b.Add(1, 2)
 	b.Add(3, 4)
