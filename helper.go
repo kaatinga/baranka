@@ -15,12 +15,16 @@ type Baranka struct {
 	blocks            []string
 }
 
-// New creates a new Baranka helper with default settings.
-func New() *Baranka {
-	return &Baranka{
+// New creates a new Baranka.
+func New(opts ...option) *Baranka {
+	b := Baranka{
 		count:    1,
 		template: "(%s)",
 	}
+
+	b.applyOptions(opts)
+
+	return &b
 }
 
 // Add appends a new block of arguments and generates corresponding placeholders.

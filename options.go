@@ -7,13 +7,11 @@ import (
 // option defines a configuration function for Baranka.
 type option func(*Baranka)
 
-// getOptions applies a list of options to a new Baranka instance.
-func getOptions(opts []option) *Baranka {
-	cfg := New()
+// applyOptions applies a list of options to a Baranka instance.
+func (b *Baranka) applyOptions(opts []option) {
 	for _, opt := range opts {
-		opt(cfg)
+		opt(b)
 	}
-	return cfg
 }
 
 // WithLength pre-allocates the argument slice with the given length.
