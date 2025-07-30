@@ -1,12 +1,13 @@
 # baranka
 
-A simple and flexible helper for preparing SQL queries with positional parameters for SQL databases like PostgreSQL, MySQL or SQLite.
+A simple and flexible helper for preparing SQL queries with positional parameters for SQL databases like PostgreSQL, MySQL, or SQLite.
 
 ## Features
 
 - Generates SQL value blocks with correct placeholders (`$1`, `$2`, ... or `?`)
 - Supports custom value templates (e.g., `(%s)`)
 - Collects arguments for use with database drivers
+- Supports SQL expressions with placeholders and arguments
 - Easily extensible with options
 
 ## Installation
@@ -36,10 +37,10 @@ args := b.Args()
 You can customize the placeholder format and value template:
 
 ```go
-b := baranka.getOptions([]baranka.option{
+b := baranka.New(
     baranka.WithIncludeTemplate("(%s)"),
     baranka.WithPlaceholderFormat(baranka.PlaceholderFormatQuestionMark),
-})
+)
 
 b.Add(1, "foo")
 b.Add(2, "bar")
@@ -50,15 +51,41 @@ args := b.Args()
 // [1, "foo", 2, "bar"]
 ```
 
+### Using Expressions
+
+You can embed SQL expressions with their own placeholders and arguments:
+
+```go
+b := baranka.New(baranka.WithPlaceholderFormat(baranka.PlaceholderFormatDollar))
+
+b.Add(
+    baranka.Expression{
+        template: "POINT(%s %s)",
+        args:     []any{10.1, 20.2},
+    },
+)
+b.Add(
+    baranka.Expression{
+        template: "POINT(%s %s)",
+        args:     []any{11.1, 21.2},
+    },
+)
+
+query := "INSERT INTO points (geom) VALUES " + b.Values()
+// VALUES (POINT($1 $2)), (POINT($3 $4))
+args := b.Args()
+// [10.1, 20.2, 11.1, 21.2]
+```
+
 ## API
 
-### `New() *Baranka`
+### `New(opts ...option) *Baranka`
 
-Creates a new Baranka helper with default settings.
+Creates a new Baranka helper with optional configuration.
 
 ### `(*Baranka) Add(args ...any)`
 
-Adds a new block of values and collects arguments.
+Adds a new block of values and collects arguments. Supports `Expression` for SQL fragments.
 
 ### `(*Baranka) Args() []any`
 
@@ -66,7 +93,7 @@ Returns the collected arguments in order.
 
 ### `(*Baranka) Values() string`
 
-Returns the SQL value blocks, e.g. `($1,$2),\n($3,$4)` or `(?,?)`.
+Returns the SQL value blocks as a string, e.g. `($1,$2),\n($3,$4)` or `(?,?)`.
 
 ### Options
 
@@ -78,13 +105,16 @@ Returns the SQL value blocks, e.g. `($1,$2),\n($3,$4)` or `(?,?)`.
   - `PlaceholderFormatDollar` (default, for PostgreSQL: `$1`, `$2`, ...)  
   - `PlaceholderFormatQuestionMark` (for MySQL/SQLite: `?`)
 
+- `WithLength(length int)`  
+  Pre-allocates the argument slice for performance.
+
 ## Example: Bulk Insert
 
 ```go
-b := baranka.getOptions([]baranka.option{
+b := baranka.New(
     baranka.WithIncludeTemplate("(%s)"),
     baranka.WithPlaceholderFormat(baranka.PlaceholderFormatDollar),
-})
+)
 
 for _, row := range rows {
     b.Add(row.ID, row.Name)
@@ -105,4 +135,4 @@ go test ./...
 
 ## License
 
-This project is licensed under the MIT License. See the [LICENSE](LICENSE.md) file for details.
+This project is licensed under the MIT License. See the [LICENSE.md](LICENSE.md) file for details.
