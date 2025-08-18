@@ -46,6 +46,12 @@ func (b *Baranka) Add(newArgs ...any) {
 	b.blocks = append(b.blocks, fmt.Sprintf(b.template, strings.Join(b.getPlaceholders(newArgs), ",")))
 }
 
+func (b *Baranka) Reset() {
+	b.count = 1
+	b.args = nil
+	b.blocks = nil
+}
+
 func extractArgs(args []any) []any {
 	capacity := 0
 	for _, arg := range args {
