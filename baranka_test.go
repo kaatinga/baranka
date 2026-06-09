@@ -117,7 +117,7 @@ func TestBaranka_Add_WithExpression(t *testing.T) {
 func BenchmarkExtractArgs_Original(b *testing.B) {
 	// Create test data with 200 blocks worth of args
 	args := make([]any, 0, 200)
-	for i := 0; i < 200; i++ {
+	for i := range 200 {
 		if i%3 == 0 {
 			args = append(args, Expression{
 				template: "ST_Point(%s, %s)",
@@ -146,7 +146,7 @@ func BenchmarkExtractArgs_Original(b *testing.B) {
 
 func BenchmarkExtractArgs_TwoPass(b *testing.B) {
 	args := make([]any, 0, 200)
-	for i := 0; i < 200; i++ {
+	for i := range 200 {
 		if i%3 == 0 {
 			args = append(args, Expression{
 				template: "ST_Point(%s, %s)",
@@ -187,7 +187,7 @@ func BenchmarkValues_StringsJoin(b *testing.B) {
 	b.ReportAllocs()
 	// Create Baranka with 200 blocks
 	baranka := New()
-	for i := 0; i < 200; i++ {
+	for i := range 200 {
 		baranka.Add(i, "value"+string(rune(i)))
 	}
 
@@ -202,7 +202,7 @@ func BenchmarkValues_StringsBuilder(b *testing.B) {
 	b.ReportAllocs()
 	// Create Baranka with 200 blocks
 	baranka := New()
-	for i := 0; i < 200; i++ {
+	for i := range 200 {
 		baranka.Add(i, "value"+string(rune(i)))
 	}
 
