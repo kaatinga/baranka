@@ -44,10 +44,12 @@ func WithPlaceholderFormat(format PlaceholderFormat) option {
 }
 
 // WithIncludeTemplate sets the template for value blocks (default: "(%s)").
+// The template must contain exactly one %s and no other % verbs; invalid
+// templates are ignored and the default is kept.
 func WithIncludeTemplate(template string) option {
 	return func(b *Baranka) {
-		if !strings.Contains(template, "%s") {
-			template = "(%s)" // fallback to default
+		if strings.Count(template, "%s") != 1 || strings.Count(template, "%") != 1 {
+			return // keep the default template
 		}
 		b.template = template
 	}

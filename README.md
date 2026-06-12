@@ -46,7 +46,7 @@ b.Add(1, "foo")
 b.Add(2, "bar")
 
 query := "INSERT INTO my_table (id, name) VALUES " + b.Values()
-// VALUES (?,?), (?,?)
+// VALUES (?,?),\n(?,?)
 args := b.Args()
 // [1, "foo", 2, "bar"]
 ```
@@ -57,9 +57,9 @@ You can embed SQL expressions with their own placeholders and arguments using th
 
 #### How to use `Expression`
 
-- The `Expression` type allows you to inject SQL fragments with their own arguments.
-- The `template` field must be a valid `fmt.Sprintf`-style template string, using `%s` for each argument you want to substitute with a placeholder.
-- The number of `%s` in the template **must match** the number of elements in the `args` slice.
+- Create expressions with `NewExpression(template, args...)`.
+- The template uses `%s` for each argument you want to substitute with a placeholder.
+- The number of `%s` in the template **must match** the number of arguments — `NewExpression` panics on a mismatch or if the template contains any other `%` verb.
 - Placeholders (`$1`, `$2`, `?`, etc.) will be substituted for each `%s` in the template, and the corresponding values will be appended to the argument list.
 
 #### Example
@@ -67,27 +67,14 @@ You can embed SQL expressions with their own placeholders and arguments using th
 ```go
 b := baranka.New(baranka.WithPlaceholderFormat(baranka.PlaceholderFormatDollar))
 
-b.Add(
-    baranka.Expression{
-        template: "POINT(%s %s)", // two %s for two arguments
-        args:     []any{10.1, 20.2},
-    },
-)
-b.Add(
-    baranka.Expression{
-        template: "POINT(%s %s)",
-        args:     []any{11.1, 21.2},
-    },
-)
+b.Add(baranka.NewExpression("POINT(%s %s)", 10.1, 20.2))
+b.Add(baranka.NewExpression("POINT(%s %s)", 11.1, 21.2))
 
 query := "INSERT INTO points (geom) VALUES " + b.Values()
-// Resulting VALUES: (POINT($1 $2)), (POINT($3 $4))
+// Resulting VALUES: (POINT($1 $2)),\n(POINT($3 $4))
 args := b.Args()
 // [10.1, 20.2, 11.1, 21.2]
 ```
-
-**Note:**  
-If you provide a template with more or fewer `%s` than arguments, the resulting SQL will be invalid.
 
 ## API
 
@@ -110,7 +97,7 @@ Returns the SQL value blocks as a string, e.g. `($1,$2),\n($3,$4)` or `(?,?)`.
 ### Options
 
 - `WithIncludeTemplate(template string)`  
-  Sets the template for value blocks (default: `(%s)`).
+  Sets the template for value blocks (default: `(%s)`). The template must contain exactly one `%s` and no other `%` verbs; invalid templates are ignored.
 
 - `WithPlaceholderFormat(format PlaceholderFormat)`  
   Sets the placeholder format:  

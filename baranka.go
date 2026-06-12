@@ -46,38 +46,50 @@ func (b *Baranka) Add(newArgs ...any) {
 	b.blocks = append(b.blocks, fmt.Sprintf(b.template, strings.Join(b.getPlaceholders(newArgs), ",")))
 }
 
+// Reset clears the collected arguments and blocks, keeping allocated capacity
+// so the instance can be reused without re-allocating.
 func (b *Baranka) Reset() {
 	b.count = 1
-	b.args = nil
-	b.blocks = nil
+	b.args = b.args[:0]
+	b.blocks = b.blocks[:0]
 }
 
 func extractArgs(args []any) []any {
-	capacity := 0
+	capacity, hasExpression := countArgs(args)
+	if !hasExpression {
+		return args
+	}
+
+	return appendArgs(make([]any, 0, capacity), args)
+}
+
+// countArgs counts the leaf arguments, recursing into nested expressions.
+func countArgs(args []any) (capacity int, hasExpression bool) {
 	for _, arg := range args {
 		switch typedArg := arg.(type) {
 		case Expression:
-			capacity += len(typedArg.args)
+			nested, _ := countArgs(typedArg.args)
+			capacity += nested
+			hasExpression = true
 		default:
 			capacity++
 		}
 	}
+	return capacity, hasExpression
+}
 
-	if capacity == len(args) {
-		return args
-	}
-
-	extractedArgs := make([]any, 0, capacity)
+// appendArgs flattens args into dst, recursing into nested expressions so that
+// the argument order matches the placeholder order produced by getPlaceholders.
+func appendArgs(dst []any, args []any) []any {
 	for _, arg := range args {
 		switch typedArg := arg.(type) {
 		case Expression:
-			extractedArgs = append(extractedArgs, typedArg.args...)
+			dst = appendArgs(dst, typedArg.args)
 		default:
-			extractedArgs = append(extractedArgs, typedArg)
+			dst = append(dst, typedArg)
 		}
 	}
-
-	return extractedArgs
+	return dst
 }
 
 func (b *Baranka) getPlaceholders(args []any) []string {

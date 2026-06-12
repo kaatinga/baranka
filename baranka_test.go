@@ -114,6 +114,94 @@ func TestBaranka_Add_WithExpression(t *testing.T) {
 	_ = fmt.Sprintf(queryTemplate, b.Values())
 }
 
+func TestBaranka_Reset(t *testing.T) {
+	b := New()
+	b.Add(1, "foo")
+	b.Add(2, "bar")
+
+	b.Reset()
+
+	if len(b.Args()) != 0 {
+		t.Errorf("expected no args after reset, got %d", len(b.Args()))
+	}
+	if b.Values() != "" {
+		t.Errorf("expected empty values after reset, got %q", b.Values())
+	}
+
+	b.Add(3, "baz")
+	if values := b.Values(); values != "($1,$2)" {
+		t.Errorf("expected placeholders to restart at $1, got %q", values)
+	}
+}
+
+func TestBaranka_Add_NestedExpression(t *testing.T) {
+	b := New()
+
+	b.Add(NewExpression("ST_SetSRID(%s, %s)", NewExpression("ST_Point(%s, %s)", 10.1, 20.2), 4326))
+
+	values := b.Values()
+	if values != "(ST_SetSRID(ST_Point($1, $2), $3))" {
+		t.Errorf("unexpected values: %s", values)
+	}
+
+	expectedArgs := []any{10.1, 20.2, 4326}
+	args := b.Args()
+	if len(args) != len(expectedArgs) {
+		t.Fatalf("expected %d args, got %d", len(expectedArgs), len(args))
+	}
+	for i, v := range expectedArgs {
+		if args[i] != v {
+			t.Errorf("arg %d: expected %v, got %v", i, v, args[i])
+		}
+	}
+}
+
+func TestBaranka_Add_SingleExpression(t *testing.T) {
+	b := New()
+	b.Add(NewExpression("lower(%s)", "FOO"))
+
+	if values := b.Values(); values != "(lower($1))" {
+		t.Errorf("unexpected values: %s", values)
+	}
+	args := b.Args()
+	if len(args) != 1 || args[0] != "FOO" {
+		t.Errorf("expected [FOO], got %v", args)
+	}
+}
+
+func TestNewExpression_Panics(t *testing.T) {
+	expectPanic := func(name string, f func()) {
+		t.Run(name, func(t *testing.T) {
+			defer func() {
+				if recover() == nil {
+					t.Error("expected panic")
+				}
+			}()
+			f()
+		})
+	}
+
+	expectPanic("too few args", func() { NewExpression("POINT(%s %s)", 1.0) })
+	expectPanic("too many args", func() { NewExpression("POINT(%s)", 1.0, 2.0) })
+	expectPanic("other verb", func() { NewExpression("POINT(%d)", 1) })
+}
+
+func TestWithIncludeTemplate_Invalid(t *testing.T) {
+	for _, template := range []string{"()", "(%s, %s)", "(%d)"} {
+		b := New(WithIncludeTemplate(template))
+		b.Add(1)
+		if values := b.Values(); values != "($1)" {
+			t.Errorf("template %q: expected default template to be kept, got %q", template, values)
+		}
+	}
+
+	b := New(WithIncludeTemplate("ROW(%s)"))
+	b.Add(1)
+	if values := b.Values(); values != "ROW($1)" {
+		t.Errorf("expected custom template to apply, got %q", values)
+	}
+}
+
 func BenchmarkExtractArgs_Original(b *testing.B) {
 	// Create test data with 200 blocks worth of args
 	args := make([]any, 0, 200)
@@ -128,8 +216,7 @@ func BenchmarkExtractArgs_Original(b *testing.B) {
 		}
 	}
 
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		// Original single-pass version
 		extractedArgs := make([]any, 0, len(args))
 		for _, arg := range args {
@@ -157,8 +244,7 @@ func BenchmarkExtractArgs_TwoPass(b *testing.B) {
 		}
 	}
 
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		// Two-pass version with capacity estimation
 		capacity := 0
 		for _, arg := range args {
@@ -191,8 +277,7 @@ func BenchmarkValues_StringsJoin(b *testing.B) {
 		baranka.Add(i, "value"+string(rune(i)))
 	}
 
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		result := strings.Join(baranka.blocks, ",\n")
 		_ = result
 	}
@@ -206,8 +291,7 @@ func BenchmarkValues_StringsBuilder(b *testing.B) {
 		baranka.Add(i, "value"+string(rune(i)))
 	}
 
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		baranka.Values()
 	}
 }
